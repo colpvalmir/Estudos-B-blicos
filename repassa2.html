@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Passa ou Repassa - Vestibulinho Etec</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#06b6d4;--accent-2:#34d399;--muted:#94a3b8;--good:#10b981;--bad:#ef4444}
+    *{box-sizing:border-box;font-family:Inter,ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+    body{margin:0;background:linear-gradient(180deg,#071029 0%,var(--bg) 100%);color:#e6eef6}
+    .wrap{max-width:980px;margin:28px auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+    h1{font-size:20px;margin:0}
+    .meta{color:var(--muted);font-size:13px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .question-area{display:flex;gap:18px}
+    .left{flex:2}
+    .right{width:260px}
+    .question{font-size:18px;margin-bottom:12px}
+    .options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    button.opt{background:#021125;border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:8px;text-align:left;cursor:pointer;transition:transform 0.15s ease;}
+    button.opt:hover{transform:translateY(-3px)}
+    button.opt.selected{outline:3px solid rgba(6,182,212,0.12)}
+    button.opt.correct{outline:3px solid var(--good)}
+    button.opt.incorrect{opacity:0.7;}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    .btn{background:var(--accent);color:#021125;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;user-select:none}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+    .progress{height:10px;background:rgba(255,255,255,0.04);border-radius:999px;overflow:hidden;margin-top:12px}
+    .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+    .score{font-weight:700;font-size:18px}
+    .explain{margin-top:14px;color:var(--muted);font-size:14px;line-height:1.4}
+    .correct{color:var(--good);font-weight:700}
+    .incorrect{color:var(--bad);font-weight:700}
+    footer{margin-top:18px;color:var(--muted);font-size:13px}
+    .final{display:none;margin-top:18px}
+    .final.visible{display:block}
+    .small{font-size:13px;color:var(--muted)}
+    .teacher-toggle{display:flex;gap:8px;align-items:center}
+    .kbd{background:#071029;border:1px solid rgba(255,255,255,0.03);padding:6px 8px;border-radius:6px;font-size:12px}
+    @media(max-width:820px){.question-area{flex-direction:column}.right{width:100%}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Passa ou Repassa - Vestibulinho Etec</h1>
+        <div class="meta">20 perguntas | Disciplinas: Português, Matemática, Ciências, História, Geografia, Atualidades</div>
+      </div>
+      <div class="teacher-toggle">
+        <label class="small">Modo professor</label>
+        <button id="toggleTeach" class="btn secondary">Mostrar respostas</button>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="question-area">
+        <div class="left">
+          <div class="question" id="qtext">Carregando pergunta...</div>
+          <div class="options" id="opts"></div>
+          <div class="controls">
+            <button id="reveal" class="btn" disabled>Revelar resposta</button>
+            <button id="next" class="btn secondary" disabled>Próxima</button>
+            <div class="small" style="margin-left:auto">Teclas: 1-4 para escolher • R revelar • N próxima</div>
+          </div>
+          <div class="progress" aria-hidden="true"><div id="bar"></div></div>
+          <div class="explain" id="explain"></div>
+        </div>
+        <aside class="right">
+          <div class="card" style="padding:12px">
+            <div class="score">Pontuação: <span id="score">0</span> / 20</div>
+            <div style="margin-top:8px" class="small">Pergunta <span id="index">0</span> de 20</div>
+            <hr style="margin:12px 0;border:none;border-top:1px solid rgba(255,255,255,0.03)">
+            <div class="small">Opções rápidas</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+              <button id="prevBtn" class="btn secondary">Anterior</button>
+              <button id="showAll" class="btn secondary">Mostrar gabarito</button>
+            </div>
+            <div style="margin-top:12px" class="small">Dica: ative o modo professor para ver explicações automaticamente.</div>
+          </div>
+        </aside>
+      </div>
+
+      <div class="final" id="finalArea">
+        <h3>Resultado final</h3>
+        <p class="small" id="finalText"></p>
+        <p class="small">Conclusão prática: Estudar com disciplina, humildade e serviço ao próximo torna o aprendizado mais sólido — um princípio que se alinha ao chamado para viver com responsabilidade moral, perseverança e amor ao próximo.</p>
+        <div style="margin-top:12px">
+          <button id="restart" class="btn">Reiniciar jogo</button>
+          <button id="export" class="btn secondary">Exportar gabarito (JSON)</button>
+        </div>
+      </div>
+
+      <footer>
+        <div class="small">Criado para uso em sala — use no projetor ou em tablets. Se quiser, eu adapto com sons, cores ou cronômetro.</div>
+      </footer>
+    </section>
+  </div>
+
+<script>
+const questions = [
+  {
+    q: 'Qual das palavras abaixo está escrita corretamente?',
+    opts: ['Enxergar','Enchergar','Enxergár','Enxergarh'],
+    a: 0,
+    explain: 'A forma correta é "Enxergar". Alternativas trocam letras comumente confundidas (ch, g\'r, h no final) e estão incorretas.'
+  },
+  {q:'Na frase "Os alunos estudaram bastante para a prova", a palavra "bastante" funciona como:',opts:['Verbo','Substantivo','Advérbio','Adjetivo'],a:2,explain:'"Bastante" modifica o verbo "estudaram", indicando intensidade — portanto é um advérbio.'},
+  {q:'Qual é o sujeito da frase "Choveu muito ontem"?',opts:['Oculto','Indeterminado','Simples','Inexistente'],a:3,explain:'Em "choveu" não há sujeito — é uma oração sem sujeito (verbo impessoal).'},
+  {q:'A frase que está escrita de acordo com a norma padrão é:',opts:['Nós vai passar na prova.','Nós vamos passar na prova.','Nós vamos passamos na prova.','Nós passará na prova.'],a:1,explain:'"Nós vamos passar" é a forma verbal correta para indicar o futuro próximo com sujeito "nós".'},
+  {q:'Qual é o valor de 25% de 200?',opts:['25','50','75','100'],a:1,explain:'25% de 200 = 0.25 × 200 = 50.'},
+  {q:'Se um retângulo tem 8 cm de comprimento e 5 cm de largura, sua área é:',opts:['13 cm²','20 cm²','40 cm²','80 cm²'],a:2,explain:'Área = comprimento × largura = 8 × 5 = 40 cm².'},
+  {q:'Em uma sala com 32 alunos, 12 são meninas. Qual a fração que representa o número de meninas?',opts:['12/20','12/32','20/32','3/8'],a:1,explain:'A fração correta é 12/32, que pode ser simplificada para 3/8.'},
+  {q:'Qual é o resultado de 2⁴?',opts:['6','8','12','16'],a:3,explain:'2⁴ = 2×2×2×2 = 16.'},
+  {q:'Qual órgão do corpo humano é responsável por bombear o sangue?',opts:['Pulmão','Estômago','Coração','Fígado'],a:2,explain:'O coração é o órgão que bombeia o sangue pelo corpo.'},
+  {q:'Qual planeta é conhecido como "planeta vermelho"?',opts:['Vênus','Marte','Júpiter','Saturno'],a:1,explain:'Marte recebeu esse apelido devido à sua aparência avermelhada (óxidos de ferro na superfície).'},
+  {q:'O que acontece quando a água atinge 100°C ao nível do mar?',opts:['Congela','Evapora','Condensa','Solidifica'],a:1,explain:'Ao nível do mar, 100°C é o ponto de ebulição da água — ela começa a evaporar (ferver).'},
+  {q:'Qual gás é essencial para a respiração dos seres humanos?',opts:['Nitrogênio','Gás carbônico','Oxigênio','Hidrogênio'],a:2,explain:'O oxigênio é o gás usado nas células durante a respiração celular.'},
+  {q:'Quem foi o primeiro presidente do Brasil?',opts:['Getúlio Vargas','Marechal Deodoro da Fonseca','Dom Pedro II','Juscelino Kubitschek'],a:1,explain:'Marechal Deodoro da Fonseca proclamou a República e foi o primeiro presidente (1889).'},
+  {q:'A Revolução Industrial começou em qual país?',opts:['França','Estados Unidos','Inglaterra','Alemanha'],a:2,explain:'A Revolução Industrial começou na Inglaterra, no século XVIII.'},
+  {q:'A Proclamação da República no Brasil aconteceu em:',opts:['1822','1889','1922','1500'],a:1,explain:'A Proclamação da República ocorreu em 15 de novembro de 1889.'},
+  {q:'Qual é o maior país do mundo em território?',opts:['Estados Unidos','Canadá','Rússia','China'],a:2,explain:'A Rússia é o maior país em extensão territorial.'},
+  {q:'O Brasil é banhado pelo:',opts:['Oceano Pacífico','Oceano Atlântico','Mar Mediterrâneo','Mar do Caribe'],a:1,explain:'O litoral brasileiro é banhado pelo Oceano Atlântico.'},
+  {q:'Qual é a capital de Mato Grosso do Sul?',opts:['Cuiabá','Campo Grande','Goiânia','Palmas'],a:1,explain:'Campo Grande é a capital de Mato Grosso do Sul.'},
+  {q:'Em 2024, qual cidade sediou os Jogos Olímpicos?',opts:['Paris','Tóquio','Los Angeles','Londres'],a:0,explain:'Os Jogos Olímpicos de 2024 foram sediados em Paris.'},
+  {q:'Se um ônibus tem 40 lugares e 28 estão ocupados, quantos lugares estão livres?',opts:['10','12','14','18'],a:1,explain:'Lugares livres = 40 - 28 = 12.'}
+];
+
+// Estado para armazenar respostas selecionadas e se já foi revelado a resposta
+let idx = 0;
+let score = 0;
+const total = questions.length;
+
+const selectedAnswers = new Array(total).fill(null);
+const revealed = new Array(total).fill(false);
+
+const qtext = document.getElementById('qtext');
+const opts = document.getElementById('opts');
+const explain = document.getElementById('explain');
+const scoreEl = document.getElementById('score');
+const indexEl = document.getElementById('index');
+const bar = document.getElementById('bar');
+const reveal = document.getElementById('reveal');
+const next = document.getElementById('next');
+const prevBtn = document.getElementById('prevBtn');
+const showAll = document.getElementById('showAll');
+const toggleTeach = document.getElementById('toggleTeach');
+const finalArea = document.getElementById('finalArea');
+const finalText = document.getElementById('finalText');
+const restart = document.getElementById('restart');
+const exportBtn = document.getElementById('export');
+
+let teacher = false;
+
+function render(){
+  const q = questions[idx];
+  qtext.textContent = q.q;
+  opts.innerHTML = '';
+
+  q.opts.forEach((o,i)=>{
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<strong>${String.fromCharCode(65+i)}</strong>. ${o}`;
+
+    b.onclick = () => {
+      if(revealed[idx]) return; // Não permite mudar após revelar resposta
+      select(i, b);
+    };
+
+    opts.appendChild(b);
+  });
+
+  explain.textContent = '';
+  indexEl.textContent = (idx+1);
+  bar.style.width = `${(idx/total)*100}%`;
+
+  // Restringe botões até selecionar resposta
+  if(selectedAnswers[idx] !== null){
+    select(selectedAnswers[idx], opts.children[selectedAnswers[idx]]);
+    reveal.disabled = false;
+  } else {
+    reveal.disabled = true;
+    next.disabled = true;
+  }
+
+  // Se já revelou a resposta nessa questão, mostra os estilos e explicações
+  if(revealed[idx]){
+    revealAnswer(true);
+    next.disabled = false;
+  }
+
+  // Desabilita botão Anterior se primeira questão
+  prevBtn.disabled = (idx === 0);
+
+  // Mostrar explicações se modo professor ativo
+  if(teacher && !revealed[idx]){
+    revealAnswer();
+  }
+}
+
+function select(i, el){
+  Array.from(opts.children).forEach(n=>{
+    n.classList.remove('selected','correct','incorrect');
+    n.style.opacity = '1';
+    n.style.outline = '';
+  });
+  el.classList.add('selected');
+  selectedAnswers[idx] = i;
+  reveal.disabled = false;
+  next.disabled = true; // só libera próxima depois de revelar
+  explain.textContent = '';
+}
+
+function revealAnswer(fromAuto=false){
+  if(selectedAnswers[idx] === null) return; // nada a revelar sem seleção
+  if(revealed[idx]) return; // evita múltiplas contagens de pontos
+
+  const q = questions[idx];
+  revealed[idx] = true;
+
+  Array.from(opts.children).forEach((b,i)=>{
+    b.style.borderColor = '';
+    b.style.outline = '';
+    b.classList.remove('correct','incorrect');
+    b.style.opacity = '1';
+
+    if(i === q.a){
+      b.classList.add('correct');
+      b.style.outline = '3px solid rgba(16,185,129,0.3)';
+    }
+
+    if(i === selectedAnswers[idx] && i !== q.a){
+      b.classList.add('incorrect');
+    }
+  });
+
+  if(selectedAnswers[idx] === q.a){
+    if(!fromAuto) score++;
+    scoreEl.textContent = score;
+    explain.innerHTML = `<span class="correct">Correto.</span> ${q.explain}`;
+  } else {
+    explain.innerHTML = `<span class="incorrect">Incorreto.</span> ${q.explain}`;
+  }
+
+  bar.style.width = `${((idx+1)/total)*100}%`;
+  next.disabled = false;
+  reveal.disabled = true;
+}
+
+function autoReveal(){
+  if(selectedAnswers[idx] !== null && !revealed[idx]){
+    revealAnswer(true);
+  }
+}
+
+reveal.addEventListener('click', () => {
+  revealAnswer();
+});
+
+next.addEventListener('click', () => {
+  if(selectedAnswers[idx] === null) return; // bloqueia avançar sem responder
+  idx++;
+  if(idx >= total){
+    showFinal();
+  } else {
+    render();
+  }
+});
+
+prevBtn.addEventListener('click', () => {
+  if(idx > 0){
+    idx--;
+    render();
+  }
+});
+
+showAll.addEventListener('click', () => {
+  let s = 'Gabarito (Pergunta: Letra)\n';
+  questions.forEach((q,i)=>{
+    s += `${i+1}: ${String.fromCharCode(65+q.a)}\n`;
+  });
+  alert(s);
+});
+
+toggleTeach.addEventListener('click', () => {
+  teacher = !teacher;
+  toggleTeach.textContent = teacher ? 'Ocultar respostas' : 'Mostrar respostas';
+  if(teacher){
+    autoReveal();
+  } else {
+    explain.textContent = '';
+    // remover estilos de respostas exibidas (se quiser)
+    Array.from(opts.children).forEach(b=>{
+      b.style.outline = '';
+      b.classList.remove('correct','incorrect');
+      b.style.opacity = '1';
+    });
+  }
+});
+
+restart.addEventListener('click', () => {
+  idx = 0;
+  score = 0;
+  for(let i=0;i<total;i++){
+    selectedAnswers[i] = null;
+    revealed[i] = false;
+  }
+  scoreEl.textContent = 0;
+  finalArea.classList.remove('visible');
+  next.disabled = true;
+  reveal.disabled = true;
+  render();
+});
+
+exportBtn.addEventListener('click', () => {
+  const data = {questions};
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'gabarito_passa_ou_repassa.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function showFinal(){
+  bar.style.width = '100%';
+  finalArea.classList.add('visible');
+  let percent = Math.round((score/total)*100);
+  finalText.textContent = `Você acertou ${score} de ${total} perguntas (${percent}%).`; 
+  // Conclusão ligada a princípios bíblicos sem citar versículos
+  const guidance = '\nConclusão: A jornada do estudo revela que disciplina, perseverança e humildade produzem frutos duradouros. Estudar com propósito e servir o próximo reforça o aprendizado — um princípio de responsabilidade, compaixão e cuidado com o que nos foi confiado.';
+  finalText.textContent += guidance;
+}
+
+// atalhos de teclado
+window.addEventListener('keydown', (e) => {
+  if(document.activeElement.tagName === 'BUTTON') return; // evitar conflito se foco em botão
+  if(e.key >= '1' && e.key <= '4'){
+    const i = Number(e.key) - 1;
+    if(opts.children[i] && !revealed[idx]){
+      opts.children[i].click();
+    }
+  }
+  if(e.key.toLowerCase() === 'r' && !reveal.disabled){
+    reveal.click();
+  }
+  if(e.key.toLowerCase() === 'n' && !next.disabled){
+    next.click();
+  }
+});
+
+// renderiza a primeira pergunta
+render();
+
+</script>
+</body>
+</html>
